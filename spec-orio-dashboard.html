@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Спек: Визуальный интерфейс Орио</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; padding: 24px; }
+  h1 { font-size: 1.6rem; margin-bottom: 8px; color: #f8fafc; }
+  .subtitle { color: #94a3b8; margin-bottom: 32px; font-size: 0.95rem; }
+  h2 { font-size: 1.1rem; color: #cbd5e1; margin-bottom: 16px; }
+  h3 { font-size: 1rem; color: #f1f5f9; margin-bottom: 12px; }
+  .section { margin-bottom: 40px; }
+  .description { background: #1e2230; border-left: 3px solid #6366f1; padding: 16px; border-radius: 4px; margin-bottom: 32px; line-height: 1.6; }
+  .variants { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .variant { background: #1e2230; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; }
+  .variant.selected { border-color: #6366f1; }
+  .variant-title { font-size: 1rem; font-weight: 600; color: #a5b4fc; margin-bottom: 8px; }
+  .variant-desc { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; line-height: 1.5; }
+  .mockup { background: #0f1117; border-radius: 6px; padding: 12px; margin-bottom: 16px; font-size: 0.75rem; color: #64748b; font-family: monospace; line-height: 1.6; min-height: 140px; white-space: pre; }
+  .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pros, .cons { padding: 8px; border-radius: 4px; font-size: 0.8rem; }
+  .pros { background: #0d2015; color: #4ade80; }
+  .cons { background: #1c0f0f; color: #f87171; }
+  .pros li, .cons li { list-style: none; padding: 2px 0; }
+  .pros li::before { content: "+ "; }
+  .cons li::before { content: "− "; }
+  .checklist { background: #1e2230; border-radius: 8px; padding: 20px; }
+  .checklist li { list-style: none; padding: 6px 0; border-bottom: 1px solid #2d3748; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+  .checklist li:last-child { border-bottom: none; }
+  .cb { width: 16px; height: 16px; border: 1px solid #4b5563; border-radius: 3px; flex-shrink: 0; }
+  .tag { display: inline-block; background: #1e2230; border: 1px solid #374151; color: #94a3b8; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; margin-right: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Визуальный интерфейс Орио</h1>
+<p class="subtitle">Спек · 2026-05-27 · статичный HTML, регенерируется скриптом</p>
+
+<div class="description">
+  <strong>Задача:</strong> Статичная HTML-страница — "лицо" ассистента Орио. Показывает архитектуру системы, ссылки на ключевые компоненты и состояние памяти. Генерируется скриптом из реальных файлов (facts.md, current_state.md, CLAUDE.md) и сохраняется локально. Открывается в браузере как дашборд.
+</div>
+
+<div class="section">
+  <h2>Варианты дизайна</h2>
+  <div class="variants">
+
+    <div class="variant">
+      <div class="variant-title">Вариант 1 — Mind Map</div>
+      <div class="variant-desc">Орио в центре. Вокруг — узлы: Проекты, Память, Скиллы, Инфраструктура. Клик на узел — раскрывает детали.</div>
+      <div class="mockup">        [Орио]
+       /   |   \
+[Проекты] [Память] [Скиллы]
+    |         |        |
+ reg-rag  facts.md  /spec
+   wta   decisions  /dreaming
+   ...   handoffs   ...</div>
+      <div class="pros-cons">
+        <ul class="pros"><li>Наглядная структура</li><li>Визуально интересно</li></ul>
+        <ul class="cons"><li>Сложно генерировать</li><li>Плохо масштабируется</li></ul>
+      </div>
+    </div>
+
+    <div class="variant selected">
+      <div class="variant-title">Вариант 2 — Панели (рекомендую)</div>
+      <div class="variant-desc">Три колонки: Архитектура (блоки с компонентами и стрелками), Память (последние факты, handoff), Ссылки (проекты, скиллы, файлы).</div>
+      <div class="mockup">┌─ Архитектура ─┬─ Память ──┬─ Ссылки ──┐
+│ [Telegram]    │ facts.md  │ Проекты   │
+│     ↓         │ • Орио    │ reg-rag   │
+│ [Claude Code] │ • VPS     │ wta       │
+│     ↓         │ ───────── │ ───────── │
+│ [Скиллы]      │ handoff   │ Скиллы    │
+│ [Память]      │ 2026-05-27│ /spec     │
+│ [Проекты]     │           │ /dreaming │
+└───────────────┴───────────┴───────────┘</div>
+      <div class="pros-cons">
+        <ul class="pros"><li>Легко генерировать</li><li>Вся инфо на экране</li><li>Просто обновлять</li></ul>
+        <ul class="cons"><li>Менее "живой"</li></ul>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-title">Вариант 3 — Профиль</div>
+      <div class="variant-desc">Страница-профиль: аватар/лого Орио, описание, список проектов карточками, блок памяти, последний handoff.</div>
+      <div class="mockup">  ╔══════════════════════╗
+  ║   🤖  О Р И О        ║
+  ║  AI-ассистент Петра  ║
+  ╚══════════════════════╝
+
+  Активные проекты:
+  [reg-rag ✅] [WTA 🔄] [emigr 📋]
+
+  Последний handoff: 2026-05-27
+  "YouTube Knowledge Base..."
+
+  Память: 42 факта · 12 решений</div>
+      <div class="pros-cons">
+        <ul class="pros"><li>Красиво</li><li>Легко читать</li></ul>
+        <ul class="cons"><li>Мало деталей архитектуры</li></ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h2>Критерии приёмки</h2>
+  <ul class="checklist">
+    <li><span class="cb"></span>Страница открывается в браузере без сервера (file://)</li>
+    <li><span class="cb"></span>Показывает архитектуру: компоненты системы и связи между ними</li>
+    <li><span class="cb"></span>Показывает память: последние факты из facts.md</li>
+    <li><span class="cb"></span>Показывает состояние: активные проекты из current_state.md</li>
+    <li><span class="cb"></span>Содержит ссылки на ключевые файлы (кликабельные file:// пути)</li>
+    <li><span class="cb"></span>Генерируется скриптом (Python) из реальных md-файлов</li>
+    <li><span class="cb"></span>Скрипт запускается без параметров: <code>python3 ~/scripts/gen_dashboard.py</code></li>
+    <li><span class="cb"></span>Результат: <code>~/knowledge/orio-dashboard.html</code></li>
+    <li><span class="cb"></span>Без внешних зависимостей (CSS встроен)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Техстек</h2>
+  <span class="tag">Python</span>
+  <span class="tag">HTML/CSS</span>
+  <span class="tag">markdown parsing</span>
+  <span class="tag">без фреймворков</span>
+</div>
+
+</body>
+</html>
