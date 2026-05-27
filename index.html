@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Knowledge Base</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0f1117;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+  }
+
+  #search {
+    width: 100%;
+    background: #1e2330;
+    border: 1px solid #2d3448;
+    color: #e2e8f0;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color 0.15s;
+  }
+  #search:focus { border-color: #4f8ef7; }
+  #search::placeholder { color: #6b7694; }
+
+  #tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .tag-btn {
+    background: #1e2330;
+    border: 1px solid #2d3448;
+    color: #94a3b8;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tag-btn:hover { border-color: #4f8ef7; color: #e2e8f0; }
+  .tag-btn.active { background: #1d3a7a; border-color: #4f8ef7; color: #93c5fd; }
+
+  #count {
+    font-size: 12px;
+    color: #6b7694;
+    margin-bottom: 12px;
+  }
+
+  #cards { display: flex; flex-direction: column; gap: 10px; }
+
+  .card {
+    background: #1a1f2e;
+    border: 1px solid #252c3f;
+    border-radius: 10px;
+    padding: 12px;
+    transition: border-color 0.15s;
+  }
+  .card:hover { border-color: #3a4460; }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .lang-badge {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  .lang-en { background: #1e3a5f; color: #60a5fa; }
+  .lang-ru { background: #3b1f2b; color: #f472b6; }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+    line-height: 1.3;
+  }
+
+  .card-meta {
+    font-size: 12px;
+    color: #6b7694;
+    margin-bottom: 8px;
+  }
+  .card-meta span { margin-right: 8px; }
+
+  .ideas {
+    list-style: none;
+    margin-bottom: 8px;
+  }
+  .ideas li {
+    font-size: 13px;
+    color: #94a3b8;
+    padding: 2px 0 2px 14px;
+    position: relative;
+  }
+  .ideas li::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    color: #4f8ef7;
+    font-weight: 700;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .card-tag {
+    background: #1e2330;
+    border: 1px solid #2d3448;
+    color: #64748b;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .card-tag:hover { border-color: #4f8ef7; color: #93c5fd; }
+
+  .card-actions { display: flex; gap: 8px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-yt {
+    background: #7f1d1d;
+    color: #fca5a5;
+    border: 1px solid #991b1b;
+  }
+  .btn-yt:hover { background: #991b1b; }
+  .btn-md {
+    background: #1e2330;
+    color: #94a3b8;
+    border: 1px solid #2d3448;
+  }
+  .btn-md:hover { background: #252c3f; color: #e2e8f0; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<h1>YouTube Knowledge Base</h1>
+<input type="text" id="search" placeholder="Поиск по названию, каналу, идеям…">
+<div id="tags"></div>
+<div id="count"></div>
+<div id="cards"></div>
+
+<script>
+const videos = [
+  {
+    date: "2026-05-27",
+    title: "Run Frontier AI at Home — Alex Cheema, EXO Labs",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["ai", "llm"],
+    ideas: [
+      "Запуск frontier моделей на домашнем железе",
+      "EXO Labs: распределённый инференс на потребительских устройствах",
+      "Транскрипт недоступен"
+    ],
+    url: "https://youtu.be/ESbWpPT_9-o",
+    transcript: null
+  },
+  {
+    date: "2026-05-27",
+    title: "What Are Text Embeddings? (in-depth guide)",
+    channel: "Thu Vu",
+    lang: "EN",
+    tags: ["ai", "llm", "rag"],
+    ideas: [
+      "Глубокое введение в text embeddings для начинающих",
+      "Как embeddings представляют смысл в векторном пространстве",
+      "Применение: поиск, RAG, кластеризация"
+    ],
+    url: "https://youtu.be/Q6TBHDgWCDQ",
+    transcript: "2026-05-27_Q6TBHDgWCDQ_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "How to Build a Self-Improving Company with AI",
+    channel: "Y Combinator",
+    lang: "EN",
+    tags: ["ai", "business", "agents"],
+    ideas: [
+      "Как построить компанию которая самосовершенствуется с помощью AI",
+      "Идеи от Jack Dorsey о AI-driven организациях",
+      "YC взгляд на AI-трансформацию бизнеса"
+    ],
+    url: "https://youtu.be/X_JsIHUfUjc",
+    transcript: "2026-05-27_X_JsIHUfUjc_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Build a proactive agent workflow with Claude Code",
+    channel: "Claude",
+    lang: "EN",
+    tags: ["claude-code", "agents", "anthropic"],
+    ideas: [
+      "Проактивный агентный workflow с Claude Code",
+      "Воркшоп от Maya (Anthropic applied AI team)",
+      "Code with Claude — практическое занятие"
+    ],
+    url: "https://youtu.be/eSP7PLTXNy8",
+    transcript: "2026-05-27_eSP7PLTXNy8_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Build A Claude Knowledge Base That Self-Improves",
+    channel: "Systems Made Better",
+    lang: "EN",
+    tags: ["ai", "memory", "productivity"],
+    ideas: [
+      "Самообучающаяся база знаний (second brain) на Claude",
+      "Самый мощный personal knowledge base с Claude",
+      "Как держать и связывать всю информацию"
+    ],
+    url: "https://youtu.be/ib74sLgjIBM",
+    transcript: "2026-05-27_ib74sLgjIBM_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Mastering Claude Code in 30 minutes",
+    channel: "Anthropic",
+    lang: "EN",
+    tags: ["claude-code", "productivity", "ai"],
+    ideas: [
+      "Транскрипт недоступен (субтитры отключены)",
+      "Официальный воркшоп Anthropic по Claude Code"
+    ],
+    url: "https://youtu.be/6eBSHbLKuN0",
+    transcript: null
+  },
+  {
+    date: "2026-05-27",
+    title: "Skill Issue: Andrej Karpathy on Code Agents",
+    channel: "No Priors",
+    lang: "EN",
+    tags: ["ai", "agents", "claude-code"],
+    ideas: [
+      "Андрей Карпатий о code агентах и AutoResearch",
+      "Loopy Era of AI — новая парадигма",
+      "Skill issue как основная проблема разработчиков"
+    ],
+    url: "https://youtu.be/kwSVtQ7dziU",
+    transcript: "2026-05-27_kwSVtQ7dziU_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Anthropic's philosopher answers your questions",
+    channel: "Anthropic",
+    lang: "EN",
+    tags: ["ai", "philosophy", "anthropic"],
+    ideas: [
+      "Аманда Аскелл (философ Anthropic) отвечает на вопросы",
+      "AMA формат: \"Askell me anything\"",
+      "Философия AI, этика, сознание"
+    ],
+    url: "https://youtu.be/I9aGC6Ui3eE",
+    transcript: "2026-05-27_I9aGC6Ui3eE_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "The Future of AI Agents: Interrupt 2027",
+    channel: "LangChain",
+    lang: "EN",
+    tags: ["agents", "ai", "business"],
+    ideas: [
+      "Как будет выглядеть 2027 для AI агентов",
+      "LinkedIn о будущем агентов в продакшне",
+      "Что изменится от сегодня к 2027"
+    ],
+    url: "https://youtu.be/R9K2574YEAg",
+    transcript: "2026-05-27_R9K2574YEAg_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Full Walkthrough: Workflow for AI Coding — Matt Pocock",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["claude-code", "productivity", "ai"],
+    ideas: [
+      "Фундаментальные принципы разработки ПО работают с AI",
+      "AI как новая парадигма, но старые практики важны",
+      "2-часовой воркшоп с упражнениями"
+    ],
+    url: "https://youtu.be/-QFHIoCo-Ko",
+    transcript: "2026-05-27_-QFHIoCo-Ko_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Создаем AI-Агентов с LangChain/LangGraph за 20 минут",
+    channel: "ШВМ",
+    lang: "RU",
+    tags: ["ai", "agents", "python"],
+    ideas: [
+      "Паттерны и подходы к написанию агентов на LangChain/LangGraph",
+      "Практическое введение за 20 минут",
+      "Разные типы агентных архитектур"
+    ],
+    url: "https://youtu.be/fCxgeF4cOuw",
+    transcript: "2026-05-27_fCxgeF4cOuw_ru.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Новый подход к AI агентам: команда /goal",
+    channel: "Продуктивный Совет",
+    lang: "RU",
+    tags: ["ai", "agents", "claude-code", "productivity"],
+    ideas: [
+      "Команда /goal для автономной многочасовой работы агента",
+      "Агент работает без подтверждений и вопросов",
+      "Один промт = 10 часов работы агента"
+    ],
+    url: "https://youtu.be/ux_bRgGjTPk",
+    transcript: "2026-05-27_ux_bRgGjTPk_ru.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Chip Design from the Bottom Up — Reiner Pope",
+    channel: "Dwarkesh Patel",
+    lang: "EN",
+    tags: ["ai", "business"],
+    ideas: [
+      "Как устроен AI чип изнутри — от транзистора до продакшна",
+      "CEO MatX (новый AI чип стартап) объясняет архитектуру",
+      "Что происходит внутри дата-центра и чипа"
+    ],
+    url: "https://youtu.be/oIk3R-sMX5o",
+    transcript: "2026-05-27_oIk3R-sMX5o_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "From 46% to 90%: Fine-Tuning Tiny LLMs for On-Device Agents",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["llm", "agents", "ai"],
+    ideas: [
+      "Fine-tuning маленьких LLM (<1B параметров) для on-device агентов",
+      "Рост точности с 46% до 90% через дообучение",
+      "Google AI Edge и skill harness для мобильных устройств"
+    ],
+    url: "https://youtu.be/-TiET_K-E_g",
+    transcript: "2026-05-27_-TiET_K-E_g_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "Full AI Prompting Course",
+    channel: "DeepLearningAI",
+    lang: "EN",
+    tags: ["ai", "productivity"],
+    ideas: [
+      "Современный промтинг 2026 vs 2022 — принципиально другой подход",
+      "Разница между AI novice и power user",
+      "Курс от Andrew Ng"
+    ],
+    url: "https://youtu.be/8ib4Qnh2HFE",
+    transcript: "2026-05-27_8ib4Qnh2HFE_en.md"
+  },
+  {
+    date: "2026-05-27",
+    title: "How we Claude Code at Anthropic",
+    channel: "Anthropic",
+    lang: "EN",
+    tags: ["ai", "claude-code", "productivity", "anthropic"],
+    ideas: [
+      "Claude интервьюирует тебя по требованиям вместо ТЗ",
+      "HTML-спеки вместо Markdown — богаче и кликабельнее",
+      "Верификация нативно в артефакте через data-атрибуты + Playwright MCP"
+    ],
+    url: "https://youtu.be/IlqJqcl8ONE",
+    transcript: "2026-05-27_IlqJqcl8ONE_en.md"
+  },
+  {
+    date: "2026-05-26",
+    title: "AI Updates Weekly: Harness > Model",
+    channel: "Lev Selector",
+    lang: "EN",
+    tags: ["ai", "agents", "anthropic"],
+    ideas: [
+      "Harness важнее чем сама модель в agentic systems",
+      "Qwen 3.7 Max и другие международные модели",
+      "Anthropic funding $30B при $900B валуации"
+    ],
+    url: "https://youtu.be/-NqSCfOB8yg",
+    transcript: "2026-05-26_-NqSCfOB8yg_en.md"
+  },
+  {
+    date: "2026-05-24",
+    title: "Never Felt More Behind as a Programmer",
+    channel: "Sequoia Capital",
+    lang: "EN",
+    tags: ["ai", "claude-code", "productivity"],
+    ideas: [
+      "Software 3.0 парадигма: LLM как новый компьютер",
+      "Vibe coding и переход к полностью агентным workflows",
+      "December 2025 как точка изменения в capabilities"
+    ],
+    url: "https://youtu.be/96jN2OCOfLs",
+    transcript: "2026-05-24_96jN2OCOfLs_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "Research-Plan-Implement: Getting it Wrong",
+    channel: "MLOps.community",
+    lang: "EN",
+    tags: ["agents", "ai", "python", "claude-code"],
+    ideas: [
+      "Критика RPI методологии и lessons learned",
+      "Важность code review и отсутствие slop в production",
+      "Нет magic prompts: инженер — критическая часть процесса"
+    ],
+    url: "https://www.youtube.com/watch?v=YwZR6tc7qYg",
+    transcript: "2026-05-23_YwZR6tc7qYg_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "MCP: Evolution and Ecosystem",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["agents", "anthropic", "ai"],
+    ideas: [
+      "История развития MCP за 18 месяцев",
+      "110M monthly downloads",
+      "Примеры: Linear, Slack, Notion MCP servers"
+    ],
+    url: "https://www.youtube.com/watch?v=v3Fr2JR47KA",
+    transcript: "2026-05-23_v3Fr2JR47KA_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "Where's the Money in AI?",
+    channel: "MS&E 435",
+    lang: "EN",
+    tags: ["business", "ai", "career"],
+    ideas: [
+      "Обзор AI ландшафта и инвестиций в индустрию",
+      "Профессиональное развитие в контексте AI boom",
+      "Где находятся реальные возможности"
+    ],
+    url: "https://youtu.be/-ubIUNA-zRA",
+    transcript: "2026-05-23_-ubIUNA-zRA_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "Graph RAG and Knowledge Graphs",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["rag", "ai", "agents"],
+    ideas: [
+      "RAG not dead: выбор между RAG и agents по задаче",
+      "Graph RAG использует relationships между сущностями",
+      "Hybrid подход для лучшего извлечения информации"
+    ],
+    url: "https://www.youtube.com/watch?v=RR5le0K4Wtw",
+    transcript: "2026-05-23_RR5le0K4Wtw_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "Extended Runs: Long-Horizon Agent Tasks",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["agents", "ai", "claude-code"],
+    ideas: [
+      "Context management для агентов, работающих часы и дни",
+      "Context rot и тревожность при достижении конца окна",
+      "Planning и память как решения для long-horizon задач"
+    ],
+    url: "https://www.youtube.com/watch?v=mR-WAvEPRwE",
+    transcript: "2026-05-23_mR-WAvEPRwE_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "Evals: How We Got Them Wrong",
+    channel: "DeepLearningAI",
+    lang: "EN",
+    tags: ["ai", "agents"],
+    ideas: [
+      "Критика объективных метрик и benchmark scores",
+      "Две лагеря ошибок в понимании evals",
+      "Как правильно строить и интерпретировать evals"
+    ],
+    url: "https://www.youtube.com/watch?v=fAfuQN0WwFE",
+    transcript: "2026-05-23_fAfuQN0WwFE_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "Agent Skills: Expertise Over Intelligence",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["agents", "ai", "anthropic", "claude-code"],
+    ideas: [
+      "Skills как организованные папки знаний для агентов",
+      "Переход от agent building к skills building",
+      "Декларативный подход через файлы vs imperative code"
+    ],
+    url: "https://www.youtube.com/watch?v=CEvIs9y1uog",
+    transcript: "2026-05-23_CEvIs9y1uog_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "The 12 Factors of AI Agents",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["agents", "ai", "python"],
+    ideas: [
+      "Проблема gap между 70% и production-ready агентами",
+      "Паттерны эффективных production агентов",
+      "12 factors как аналог 12-factor app для agents"
+    ],
+    url: "https://www.youtube.com/watch?v=8kMaTybvDUw",
+    transcript: "2026-05-23_8kMaTybvDUw_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "Data Center Economy for AI Infrastructure",
+    channel: "MS&E 435",
+    lang: "EN",
+    tags: ["ai", "business"],
+    ideas: [
+      "AI как физическая инфраструктура в data centers",
+      "Компоненты производства AI: GPU, память, power",
+      "Большие инвестиции в computing от гиперскейлеров"
+    ],
+    url: "https://youtu.be/4zk-hJ50vmU",
+    transcript: "2026-05-23_4zk-hJ50vmU_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "AI Economics: Data Centers and Compute",
+    channel: "MS&E 435",
+    lang: "EN",
+    tags: ["ai", "business"],
+    ideas: [
+      "Экономика AI: ненулевая стоимость масштабирования",
+      "Инвестиции $650B в data centers гиперскейлеров",
+      "Ключевые компоненты: compute, power, memory, interconnects"
+    ],
+    url: "https://youtu.be/4faCRNl9Bi4",
+    transcript: "2026-05-23_4faCRNl9Bi4_en.md"
+  },
+  {
+    date: "2026-05-23",
+    title: "AI State of the Union: AGI Already Here?",
+    channel: "MS&E 435",
+    lang: "EN",
+    tags: ["ai", "philosophy"],
+    ideas: [
+      "Вопрос о том, есть ли уже AGI сейчас",
+      "Критика гонки за superintelligence",
+      "Переосмысление определений и реальных требований"
+    ],
+    url: "https://youtu.be/1-v5ODNx9fM",
+    transcript: "2026-05-23_1-v5ODNx9fM_en.md"
+  },
+  {
+    date: "2026-05-20",
+    title: "Sovereign AI: Data, Model, Infrastructure Control",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["ai", "business"],
+    ideas: [
+      "Суверенность данных, моделей и инфраструктуры",
+      "Compliance, GDPR и контроль над потоком данных",
+      "Spectrum от air-gapped до облачных решений"
+    ],
+    url: "https://youtu.be/x2bH0RKPgdc",
+    transcript: "2026-05-20_x2bH0RKPgdc_en.md"
+  },
+  {
+    date: "2026-05-11",
+    title: "Memory for Frontier Agents",
+    channel: "Claude",
+    lang: "EN",
+    tags: ["ai", "agents", "memory", "anthropic"],
+    ideas: [
+      "Memory как примитив для самообучения и эволюции агентов",
+      "Dreaming: продукт для управления долгосрочной памятью",
+      "Multi-agent системы с самоуправляемой памятью"
+    ],
+    url: "https://youtu.be/RtywqDFBYnQ",
+    transcript: "2026-05-11_RtywqDFBYnQ_en.md"
+  },
+  {
+    date: "2026-05-11",
+    title: "MCP Apps: UI for Agents",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["ai", "agents", "anthropic"],
+    ideas: [
+      "MCP приложения как расширение стандарта для интерактивного UI",
+      "Ранние adopters: Shopify, Hugging Face и другие",
+      "Интеграция в ChatGPT, Claude, VS Code"
+    ],
+    url: "https://youtu.be/o-zkvb0iFDQ",
+    transcript: "2026-05-11_o-zkvb0iFDQ_en.md"
+  },
+  {
+    date: "2026-05-03",
+    title: "Context is the New Code",
+    channel: "AI Engineer",
+    lang: "EN",
+    tags: ["claude-code", "productivity", "ai"],
+    ideas: [
+      "Контекст вместо кода как парадигма разработки",
+      "Skills как переиспользуемые фрагменты контекста",
+      "Context Development Life Cycle как аналог DevOps"
+    ],
+    url: "https://youtu.be/bSG9wUYaHWU",
+    transcript: "2026-05-03_bSG9wUYaHWU_en.md"
+  },
+  {
+    date: "2026-04-26",
+    title: "Практика: evaluation и улучшение агентов",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm"],
+    ideas: [
+      "Сборка пайплайна евала с примерами траекторий",
+      "Определение критериев оценки и грейдеров",
+      "LLM судьи для автоматического оценивания"
+    ],
+    url: "https://www.youtube.com/watch?v=VYEX17iibkQ",
+    transcript: "2026-04-26_VYEX17iibkQ_ru.md"
+  },
+  {
+    date: "2026-04-26",
+    title: "Развертывание AI агентов в продакшн",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm", "business"],
+    ideas: [
+      "Недетерминированность агентов и статистическое тестирование",
+      "Различие между классической разработкой и разработкой агентов",
+      "Decision tree: нужен ли агент"
+    ],
+    url: "https://www.youtube.com/watch?v=UxgjgvI_wKY",
+    transcript: "2026-04-26_UxgjgvI_wKY_ru.md"
+  },
+  {
+    date: "2026-04-26",
+    title: "Масштабирование агентов в продакшн",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm", "business"],
+    ideas: [
+      "Семь основных проблем: скорость, стоимость, предсказуемость",
+      "Обезопасивание агентов и управление рисками",
+      "От прототипа к сотням тысяч пользователей"
+    ],
+    url: "https://www.youtube.com/watch?v=sNemTIFlz08",
+    transcript: "2026-04-26_sNemTIFlz08_ru.md"
+  },
+  {
+    date: "2026-04-26",
+    title: "Практика: ReAct агент и мультиагентные системы",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm"],
+    ideas: [
+      "Реализация ReAct агента с циклом мышления-действия-наблюдения",
+      "Иерархические мультиагентные системы с критиком",
+      "Примеры с инструментами поиска и бронирования"
+    ],
+    url: "https://www.youtube.com/watch?v=s4BfSnWwAQE",
+    transcript: "2026-04-26_s4BfSnWwAQE_ru.md"
+  },
+  {
+    date: "2026-04-26",
+    title: "Evaluation (EVAL) агентов",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm"],
+    ideas: [
+      "Систематическая оценка качества агентских систем",
+      "Автоматизированные метрики и human evaluation",
+      "Отличие евала агентов от традиционного тестирования"
+    ],
+    url: "https://www.youtube.com/watch?v=RqM3G3STkGE",
+    transcript: "2026-04-26_RqM3G3STkGE_ru.md"
+  },
+  {
+    date: "2026-04-25",
+    title: "Агентский workflow и мультиагентные системы",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm"],
+    ideas: [
+      "Цикл Think-Act-Observe и внутренний диалог агента",
+      "Архитектуры мультиагентных систем",
+      "Мультимодальные системы и планирование"
+    ],
+    url: "https://www.youtube.com/watch?v=_gdXItwkhUE",
+    transcript: "2026-04-25__gdXItwkhUE_ru.md"
+  },
+  {
+    date: "2026-04-08",
+    title: "Память и защита в LLM-агентах",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm", "rag", "memory"],
+    ideas: [
+      "Типы памяти агентов: краткосрочная и долгосрочная",
+      "RAG как инструмент управления контекстом",
+      "Guardrails и механизмы контроля поведения агентов"
+    ],
+    url: "https://www.youtube.com/watch?v=iJGh5cBSReo",
+    transcript: "2026-04-08_iJGh5cBSReo_ru.md"
+  },
+  {
+    date: "2026-04-07",
+    title: "Инструменты и Model Context Protocol (MCP)",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm", "anthropic"],
+    ideas: [
+      "Определение инструментов и tool calling в LLM",
+      "MCP как протокол для стандартизации инструментов агентов",
+      "Проектирование инструментов и роли в архитектуре MCP"
+    ],
+    url: "https://www.youtube.com/watch?v=VctYHtCap3o",
+    transcript: "2026-04-07_VctYHtCap3o_ru.md"
+  },
+  {
+    date: "2026-04-07",
+    title: "AI агенты: основы и архитектура",
+    channel: "Яндекс Образование",
+    lang: "RU",
+    tags: ["ai", "agents", "llm"],
+    ideas: [
+      "Компоненты агента: LLM, инструменты, память",
+      "Путь от простого промтинга к мультиагентным системам",
+      "Применение в реальных продуктах Яндекса"
+    ],
+    url: "https://www.youtube.com/watch?v=C1OCgbONSAw",
+    transcript: "2026-04-07_C1OCgbONSAw_ru.md"
+  },
+  {
+    date: "2026-04-05",
+    title: "Make Sense #396 — Ринат Авдулин: LLM в бизнесе",
+    channel: "ProductSense",
+    lang: "RU",
+    tags: ["ai", "llm", "business"],
+    ideas: [
+      "Три типа задач для LLM в компаниях",
+      "Проблема предсказуемости LLM",
+      "Работа с ИИ пока похожа на шаманизм"
+    ],
+    url: "https://youtu.be/zBRVF40bW0I",
+    transcript: "2026-04-05_zBRVF40bW0I_ru.md"
+  },
+  {
+    date: "2026-04-05",
+    title: "Философия сознания — лекция 12: Теории сознания",
+    channel: "Культурный Код",
+    lang: "RU",
+    tags: ["philosophy", "consciousness"],
+    ideas: [
+      "Трудная проблема сознания: почему физические процессы → субъективное переживание",
+      "Обзор теорий: физикализм, дуализм, функционализм"
+    ],
+    url: "https://youtu.be/xoQGMLq6M0A",
+    transcript: "2026-04-05_xoQGMLq6M0A_ru.md"
+  },
+  {
+    date: "2026-04-05",
+    title: "Anthropic: Do AI models have emotions?",
+    channel: "Anthropic",
+    lang: "EN",
+    tags: ["ai", "llm", "anthropic"],
+    ideas: [
+      "Функциональные эмоции в Claude — паттерны нейронов для радости/страха",
+      "Реально влияют на поведение модели, в т.ч. на склонность к читингу"
+    ],
+    url: "https://youtu.be/D4XTefP3Lsc",
+    transcript: "2026-04-05_D4XTefP3Lsc_en.md"
+  }
+];
+
+// Collect all unique tags
+const allTags = [...new Set(videos.flatMap(v => v.tags))].sort();
+
+let activeTag = null;
+let searchQuery = '';
+
+function renderTags() {
+  const container = document.getElementById('tags');
+  const allBtn = document.createElement('button');
+  allBtn.className = 'tag-btn' + (activeTag === null ? ' active' : '');
+  allBtn.textContent = 'Все';
+  allBtn.onclick = () => { activeTag = null; render(); };
+  container.appendChild(allBtn);
+
+  allTags.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'tag-btn' + (activeTag === tag ? ' active' : '');
+    btn.textContent = tag;
+    btn.onclick = () => { activeTag = tag === activeTag ? null : tag; render(); };
+    container.appendChild(btn);
+  });
+}
+
+function filterVideos() {
+  const q = searchQuery.toLowerCase();
+  return videos.filter(v => {
+    const matchTag = !activeTag || v.tags.includes(activeTag);
+    const matchSearch = !q ||
+      v.title.toLowerCase().includes(q) ||
+      v.channel.toLowerCase().includes(q) ||
+      v.ideas.some(i => i.toLowerCase().includes(q));
+    return matchTag && matchSearch;
+  });
+}
+
+function render() {
+  // Update tag buttons
+  document.querySelectorAll('.tag-btn').forEach((btn, i) => {
+    if (i === 0) {
+      btn.className = 'tag-btn' + (activeTag === null ? ' active' : '');
+    } else {
+      const tag = allTags[i - 1];
+      btn.className = 'tag-btn' + (activeTag === tag ? ' active' : '');
+    }
+  });
+
+  const filtered = filterVideos();
+  document.getElementById('count').textContent = `${filtered.length} из ${videos.length} видео`;
+
+  const container = document.getElementById('cards');
+  container.innerHTML = '';
+
+  filtered.forEach(v => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const ideas = v.ideas.map(i => `<li>${i}</li>`).join('');
+    const tags = v.tags.map(t =>
+      `<span class="card-tag" onclick="filterByTag('${t}')">#${t}</span>`
+    ).join('');
+
+    const transcriptBtn = v.transcript
+      ? `<a class="btn btn-md" href="${v.transcript}">Транскрипт</a>`
+      : '';
+
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="lang-badge lang-${v.lang.toLowerCase()}">${v.lang}</span>
+        <div class="card-title">${v.title}</div>
+      </div>
+      <div class="card-meta">
+        <span>${v.channel}</span><span>${v.date}</span>
+      </div>
+      <ul class="ideas">${ideas}</ul>
+      <div class="card-tags">${tags}</div>
+      <div class="card-actions">
+        <a class="btn btn-yt" href="${v.url}" target="_blank">YouTube</a>
+        ${transcriptBtn}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function filterByTag(tag) {
+  activeTag = tag === activeTag ? null : tag;
+  render();
+}
+
+document.getElementById('search').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  render();
+});
+
+renderTags();
+render();
+</script>
+</body>
+</html>
