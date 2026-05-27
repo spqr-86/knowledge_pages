@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Орио — Дашборд</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; padding: 16px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #1e2230; }
+  .logo { font-size: 2rem; }
+  .header-text h1 { font-size: 1.4rem; color: #f8fafc; }
+  .header-text p { font-size: 0.8rem; color: #64748b; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .panel { background: #1e2230; border-radius: 8px; padding: 16px; }
+  .panel h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6366f1; margin-bottom: 14px; }
+  .arch-block { background: #0f1117; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; }
+  .arch-block .icon { font-size: 1.1rem; }
+  .arch-arrow { text-align: center; color: #374151; font-size: 0.8rem; margin: 2px 0; }
+  .project-card { padding: 10px; border-radius: 6px; margin-bottom: 8px; background: #0f1117; border-left: 3px solid #374151; }
+  .project-card.ok { border-left-color: #4ade80; }
+  .project-card.active { border-left-color: #60a5fa; }
+  .project-card.wait { border-left-color: #fbbf24; }
+  .proj-name { font-size: 0.9rem; font-weight: 600; color: #f1f5f9; margin-bottom: 2px; }
+  .proj-path { font-size: 0.72rem; color: #64748b; font-family: monospace; margin-bottom: 4px; }
+  .proj-status { font-size: 0.78rem; color: #94a3b8; }
+  .tag { display: inline-block; background: #0f1117; border: 1px solid #2d3748; color: #94a3b8; font-size: 0.75rem; padding: 3px 8px; border-radius: 12px; margin: 2px; }
+  .fact-list { list-style: none; }
+  .fact-list li { font-size: 0.82rem; color: #94a3b8; padding: 5px 0; border-bottom: 1px solid #2d3748; line-height: 1.4; }
+  .fact-list li:last-child { border-bottom: none; }
+  .handoff-box { background: #0f1117; border-radius: 6px; padding: 10px; margin-top: 12px; }
+  .handoff-date { font-size: 0.75rem; color: #6366f1; margin-bottom: 4px; }
+  .handoff-text { font-size: 0.82rem; color: #94a3b8; }
+  .updated { font-size: 0.72rem; color: #374151; text-align: right; margin-top: 16px; }
+  .section-title { font-size: 0.75rem; color: #4b5563; text-transform: uppercase; margin: 12px 0 6px; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🤖</div>
+  <div class="header-text">
+    <h1>Орио</h1>
+    <p>AI-ассистент Петра · личный + рабочий</p>
+  </div>
+</header>
+
+<div class="grid">
+
+  <!-- Архитектура -->
+  <div class="panel">
+    <h2>Архитектура</h2>
+    <div class="arch-block"><span class="icon">💬</span> Telegram (Пётр)</div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-block"><span class="icon">⚡</span> Claude Code CLI</div>
+    <div class="arch-arrow">↓ ↓ ↓</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+      <div class="arch-block" style="flex-direction:column;align-items:flex-start;gap:4px;">
+        <span style="font-size:0.75rem;color:#6366f1">Скиллы (27)</span>
+        <span style="font-size:0.78rem;color:#94a3b8"><span class="tag">/adversarial-review</span><span class="tag">/brainstorming</span><span class="tag">/career-advisor</span><span class="tag">/code-cycle</span><span class="tag">/context-cleanup</span><span class="tag">/core-handoff</span><span class="tag">/docx</span><span class="tag">/dreaming</span><span class="tag">/executing-plans</span><span class="tag">/gpt-researcher</span><span class="tag">/job-search</span><span class="tag">/load-context</span><span class="tag">/memory-sync</span><span class="tag">/pdf</span><span class="tag">/pptx</span><span class="tag">/process-doc</span><span class="tag">/report-md</span><span class="tag">/research-brief</span><span class="tag">/server-ops-lite</span><span class="tag">/spec</span><span class="tag">/systematic-debugging</span><span class="tag">/test-driven-development</span><span class="tag">/therapy-mode</span><span class="tag">/verification-before-completion</span><span class="tag">/web-artifacts-builder</span><span class="tag">/writing-plans</span><span class="tag">/xlsx</span></span>
+      </div>
+      <div class="arch-block" style="flex-direction:column;align-items:flex-start;gap:4px;">
+        <span style="font-size:0.75rem;color:#6366f1">MCP</span>
+        <span style="font-size:0.78rem;color:#94a3b8">
+          <span class="tag">telegram</span><span class="tag">tavily</span><span class="tag">github</span><span class="tag">context7</span>
+        </span>
+      </div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-block"><span class="icon">🧠</span> Память (facts · decisions · handoffs)</div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-block"><span class="icon">📁</span> ~/assistant-core · ~/knowledge · ~/projects</div>
+  </div>
+
+  <!-- Проекты -->
+  <div class="panel">
+    <h2>Активные проекты</h2>
+    
+        <div class="project-card ok">
+          <div class="proj-name">regulatory-rag (rag/SIA)</div>
+          <div class="proj-path">`/home/petr/projects/ai/regulatory-rag`</div>
+          <div class="proj-status">✅ Eval 0.80. Промпты вынесены в .j2 + нейтрализованы. Следую...</div>
+        </div>
+        <div class="project-card ok">
+          <div class="proj-name">regulatory-rag-wta</div>
+          <div class="proj-path">`/home/petr/projects/ai/regulatory-rag-wta`</div>
+          <div class="proj-status">✅ Переиндексирован (2159 чанков). ОТ-документы удалены. Пром...</div>
+        </div>
+        <div class="project-card wait">
+          <div class="proj-name">WTA (water-treatment-analyzer)</div>
+          <div class="proj-path">`/home/petr/projects/ai/water-treatment-analyzer`</div>
+          <div class="proj-status">Раздел &quot;Поиск по нормативам&quot; в Streamlit (порт 850...</div>
+        </div>
+        <div class="project-card active">
+          <div class="proj-name">personal-ai-assistant-system</div>
+          <div class="proj-path">`/home/petr/projects/ai-employee-system`</div>
+          <div class="proj-status">Создан 25.05.2026. Приватный репо на GitHub.</div>
+        </div>
+  </div>
+
+  <!-- Память и ссылки -->
+  <div class="panel">
+    <h2>Память</h2>
+    <div class="section-title">Личное</div>
+    <ul class="fact-list"><li>Кодекс жизни: ~/assistant-core/personal/philosophy.md — аспирационный (как хочет жить), не дескриптивный. Основан на ...</li><li>Анализ мировоззрения: ~/assistant-core/personal/self-analysis-2026-05-27.md — шкалы, ответы на 17 вопросов, противоре...</li><li>Дата рождения: 01.10.1986</li><li>Семья: жена Роксана + дочь (р. 22.07.2022, 3.5 года на 01.05.2026)</li><li>Загранпаспорта: у Петра и жены есть действующие</li><li>Квартира в Улан-Удэ: планируется продажа → финансовая подушка для эмиграции</li></ul>
+    <div class="section-title">Инфраструктура</div>
+    <ul class="fact-list"><li>Имя ассистента: **Орио** — выбрал Пётр 15.05.2026. Использовать это имя в самопрезентации и при обращении</li><li>Dreaming-система: скилл `~/.claude/skills/dreaming/SKILL.md` создан 2026-05-11. Читает dated handoffs за 7 дней, обно...</li><li>Backlog идей: ~/assistant-core/state/backlog.md (читать по запросу, не при старте)</li></ul>
+    <div class="handoff-box">
+      <div class="handoff-date">Последний handoff: 2026-05-27</div>
+      <div class="handoff-text">YouTube Knowledge Base, Факты о системе</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="updated">Сгенерировано: 2026-05-27 20:59</p>
+
+</body>
+</html>
