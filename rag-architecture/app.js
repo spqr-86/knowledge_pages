@@ -92,7 +92,7 @@ const SCENARIOS = {
   },
 };
 
-const STEP_MS = 500;
+const STEP_MS = 1200;
 
 function escapeHtml(s) {
   return String(s == null ? "" : s)
@@ -144,7 +144,8 @@ function renderGraph() {
 
   svg.attr("viewBox", `0 0 ${g.graph().width + 40} ${g.graph().height + 40}`);
 
-  svg.selectAll("g.node").on("click", function(id) {
+  svg.selectAll("g.node").on("click", function(datum) {
+    const id = (datum != null && typeof datum === "string") ? datum : this.getAttribute("id");
     clearSimulation();
     d3.selectAll("g.node").classed("active", false);
     d3.select(this).classed("active", true);
