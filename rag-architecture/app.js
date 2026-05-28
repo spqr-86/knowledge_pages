@@ -242,9 +242,54 @@ function showPanel(nodeId) {
   panel.innerHTML = html;
 }
 
+// --- Indexing tab ---
+
+function renderIndexing() {
+  const view = document.getElementById("indexing-view");
+  if (!view) return;
+  const steps = DATA.indexingSteps || [];
+  let html = `<div class="idx-header"><h2>Indexing Pipeline</h2><p>Как документы попадают в индекс: от PDF до готового векторного + BM25 хранилища.</p></div>`;
+  html += `<div class="idx-lane">`;
+  steps.forEach((step, i) => {
+    const isLast = i === steps.length - 1;
+    html += `<div class="idx-step" data-id="${escapeHtml(step.id)}">`;
+    html += `<div class="idx-icon">${escapeHtml(step.icon)}</div>`;
+    html += `<div class="idx-body">`;
+    html += `<div class="idx-label">${escapeHtml(step.label)}</div>`;
+    html += `<div class="idx-desc">${escapeHtml(step.description)}</div>`;
+    if (step.params && step.params.length) {
+      html += `<div class="idx-params">${step.params.map(p => `<code>${escapeHtml(p)}</code>`).join("")}</div>`;
+    }
+    if (step.file) {
+      const href = REPO + step.file;
+      html += `<div class="idx-file"><a href="${escapeHtml(href)}" target="_blank">${escapeHtml(step.file)}</a></div>`;
+    }
+    html += `</div>`;
+    if (!isLast) html += `<div class="idx-arrow">→</div>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+  view.innerHTML = html;
+}
+
+// --- Tabs ---
+
+function initTabs() {
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+    });
+  });
+}
+
 // --- Init ---
 
 renderGraph();
+renderIndexing();
+initTabs();
 
 document.querySelectorAll(".sim-btn").forEach(btn => {
   btn.addEventListener("click", () => runSimulation(btn.dataset.scenario));
