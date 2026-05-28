@@ -6,21 +6,41 @@ header .repo a { color: #7dd3fc; font-size: 13px; text-decoration: none; }
 main { display: flex; height: calc(100vh - 56px); }
 #graph { flex: 1.4; overflow: auto; padding: 24px; }
 #svg-graph { width: 100%; height: 100%; }
-#panel { flex: 1; border-left: 1px solid #2a3142; padding: 20px 24px; overflow-y: auto; background: #151823; }
-#panel .placeholder { color: #64748b; }
-#panel h2 { margin-top: 0; font-size: 20px; color: #fbbf24; }
-.file { margin: 14px 0; padding: 10px 12px; background: #1c2333; border-radius: 6px; }
-.file-path { font-family: monospace; font-size: 13px; color: #7dd3fc; margin-bottom: 6px; }
+#panel { flex: 1; border-left: 1px solid #2a3142; padding: 20px 24px; overflow-y: auto; background: #151823; min-width: 320px; }
+#panel .placeholder { color: #64748b; margin-top: 32px; text-align: center; font-size: 14px; }
+#panel h2 { margin-top: 0; font-size: 18px; color: #fbbf24; margin-bottom: 6px; font-family: monospace; }
+.node-desc { color: #94a3b8; font-size: 13px; margin: 0 0 14px; line-height: 1.5; }
+
+/* Inputs / Outputs */
+.io-block { background: #0f1117; border: 1px solid #2a3142; border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; }
+.io-row { display: flex; align-items: baseline; gap: 10px; margin: 4px 0; font-size: 13px; }
+.io-label { color: #64748b; font-size: 11px; min-width: 70px; white-space: nowrap; }
+.io-fields code { background: #1c2333; color: #7dd3fc; padding: 1px 6px; border-radius: 3px; font-size: 12px; margin-right: 4px; font-family: monospace; }
+
+/* Routing */
+.routing-block { margin-bottom: 14px; border: 1px solid #2a3142; border-radius: 6px; overflow: hidden; }
+.routing-title { background: #1c2333; color: #94a3b8; font-size: 11px; padding: 5px 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.route-row { display: flex; gap: 10px; padding: 6px 12px; border-top: 1px solid #2a3142; font-size: 12px; align-items: baseline; }
+.route-target { font-family: monospace; color: #a5b4fc; white-space: nowrap; min-width: 120px; }
+.route-cond { color: #64748b; font-style: italic; }
+
+/* Files */
+.files-title { color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.file { margin: 10px 0; padding: 10px 12px; background: #1c2333; border-radius: 6px; }
+.file-path { font-family: monospace; font-size: 12px; color: #7dd3fc; margin-bottom: 6px; }
 .file-path a { color: inherit; text-decoration: none; }
 .file-path a:hover { text-decoration: underline; }
-.def { margin: 4px 0 4px 16px; font-size: 13px; }
+.def { margin: 4px 0 4px 16px; font-size: 12px; }
 .def a { color: #e2e8f0; text-decoration: none; font-family: monospace; }
 .def a:hover { color: #fbbf24; }
-.def .kind { color: #94a3b8; font-size: 11px; margin-right: 4px; }
+.def .kind { color: #475569; font-size: 10px; margin-right: 4px; }
 .def .doc { color: #64748b; font-size: 11px; margin-left: 8px; }
-.node rect { fill: #1c2333; stroke: #475569; stroke-width: 1.5; cursor: pointer; }
-.node:hover rect, .node.active rect { stroke: #fbbf24; stroke-width: 2.5; }
-.node text { fill: #e2e8f0; font-size: 13px; font-family: monospace; }
+
+/* Graph nodes */
+.node rect { stroke-width: 1.5; cursor: pointer; }
+.node:hover rect, .node.active rect { stroke: #fbbf24 !important; stroke-width: 2.5 !important; filter: brightness(1.3); }
+.node text { fill: #e2e8f0; font-size: 12px; font-family: monospace; }
 .edgePath path { stroke: #475569; stroke-width: 1.5; fill: none; }
-.edgePath.conditional path { stroke-dasharray: 4 3; stroke: #94a3b8; }
+.edgePath.conditional path { stroke-dasharray: 5 3; stroke: #7dd3fc; }
+.edgePath.entry-edge path { stroke: #334155; stroke-dasharray: none; }
 .edgePath marker path { fill: #475569; stroke: none; }
