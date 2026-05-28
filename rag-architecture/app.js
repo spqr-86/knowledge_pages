@@ -1,29 +1,94 @@
 const REPO = "https://github.com/spqr-86/regulatory-rag/blob/main/";
 
+// Each step: { node, snapshot } where snapshot is shown in the panel during simulation.
+// snapshot fields: title (что происходит), fields (key-value пары состояния), verdict (итог шага)
 const SCENARIOS = {
   simple: {
     label: "Нормативный вопрос (simple path)",
-    path: ["START", "intent_gate", "router", "rag_simple", "evaluate_triage", "visual_enrichment", "generate_answer", "END"],
+    query: "Как часто проводится повторный инструктаж?",
+    steps: [
+      { node: "START",            snapshot: { title: "Запрос получен", fields: { query: "«Как часто проводится повторный инструктаж?»" } } },
+      { node: "intent_gate",      snapshot: { title: "Проверка намерения", fields: { cosine_sim_to_corpus: "0.71", threshold: "0.25" }, verdict: "✅ domain match → продолжаем" } },
+      { node: "router",           snapshot: { title: "Роутинг запроса", fields: { active_query: "«повторный инструктаж периодичность»", glossary_hits: "инструктаж → инструктаж по охране труда" }, verdict: "→ rag_simple" } },
+      { node: "rag_simple",       snapshot: { title: "Гибридный retrieval", fields: { semantic_hits: "8", bm25_hits: "3 (guarantee)", total_passages: "12", top_score: "0.82 (vector)" }, verdict: "→ evaluate_triage" } },
+      { node: "evaluate_triage",  snapshot: { title: "Оценка quality", fields: { top_score: "0.82", threshold_hard: "0.50", keyword_overlap_original: "0.67", crossref_hits: "1 (< 3)" }, verdict: "✅ sufficient → visual_enrichment" } },
+      { node: "visual_enrichment",snapshot: { title: "Визуальное обогащение", fields: { visual_found: "нет (документ без таблиц на этот вопрос)" }, verdict: "→ generate_answer" } },
+      { node: "generate_answer",  snapshot: { title: "Генерация ответа", fields: { model: "gemini-2.5-flash", passages_used: "12", thinking_budget: "нет (simple path)" }, verdict: "«Повторный инструктаж проводится не реже одного раза в 6 месяцев (п. 16 Приказа 2464)»" } },
+      { node: "END",              snapshot: { title: "Готово", fields: { path: "simple", latency: "~4.9s", cost: "~$0.004" } } },
+    ],
   },
   borderline: {
     label: "Borderline → LLM verifier",
-    path: ["START", "intent_gate", "router", "rag_simple", "evaluate_triage", "llm_verifier", "visual_enrichment", "generate_answer", "END"],
+    query: "Кто проводит первичный инструктаж на рабочем месте?",
+    steps: [
+      { node: "START",            snapshot: { title: "Запрос получен", fields: { query: "«Кто проводит первичный инструктаж на рабочем месте?»" } } },
+      { node: "intent_gate",      snapshot: { title: "Проверка намерения", fields: { cosine_sim_to_corpus: "0.63" }, verdict: "✅ domain match" } },
+      { node: "router",           snapshot: { title: "Роутинг", fields: { active_query: "«первичный инструктаж проводит»" }, verdict: "→ rag_simple" } },
+      { node: "rag_simple",       snapshot: { title: "Hybrid retrieval", fields: { passages: "12", top_score: "0.43" }, verdict: "→ evaluate_triage" } },
+      { node: "evaluate_triage",  snapshot: { title: "Оценка quality", fields: { top_score: "0.43", range: "0.38 – 0.50 = borderline", keyword_overlap_original: "0.50" }, verdict: "⚠️ borderline → llm_verifier" } },
+      { node: "llm_verifier",     snapshot: { title: "LLM верификация", fields: { model: "gemini-2.5-flash", verdict_llm: "SUFFICIENT — прямой ответ найден в чанке" }, verdict: "✅ → visual_enrichment" } },
+      { node: "visual_enrichment",snapshot: { title: "Визуальное обогащение", fields: { visual_found: "нет" }, verdict: "→ generate_answer" } },
+      { node: "generate_answer",  snapshot: { title: "Генерация", fields: { model: "gemini-2.5-flash", passages_used: "12" }, verdict: "«Первичный инструктаж проводит непосредственный руководитель работ»" } },
+      { node: "END",              snapshot: { title: "Готово", fields: { path: "simple+verifier", latency: "~8s", cost: "~$0.007" } } },
+    ],
   },
   complex: {
     label: "Сложный путь (rag_complex)",
-    path: ["START", "intent_gate", "router", "rag_simple", "evaluate_triage", "rag_complex", "evaluate_complex", "visual_enrichment", "generate_answer", "END"],
+    query: "Какие категории работников освобождаются от первичного инструктажа?",
+    steps: [
+      { node: "START",            snapshot: { title: "Запрос получен", fields: { query: "«Какие категории работников освобождаются от первичного инструктажа?»" } } },
+      { node: "intent_gate",      snapshot: { title: "Проверка намерения", fields: { cosine_sim_to_corpus: "0.68" }, verdict: "✅ domain match" } },
+      { node: "router",           snapshot: { title: "Роутинг", fields: { active_query: "«освобождение первичный инструктаж категории»", enumeration_intent: "true (запрос «какие категории»)" }, verdict: "→ rag_simple" } },
+      { node: "rag_simple",       snapshot: { title: "Hybrid retrieval", fields: { passages: "12", top_score: "0.74" }, verdict: "→ evaluate_triage" } },
+      { node: "evaluate_triage",  snapshot: { title: "Оценка quality", fields: { top_score: "0.74 (≥0.50)", enumeration_intent: "true ⚡" }, verdict: "⚡ enumeration escalation → rag_complex" } },
+      { node: "rag_complex",      snapshot: { title: "Расширенный retrieval", fields: { multi_query_variants: "3", cross_ref_expanded: "2 пункта", mmr_passages: "24", top_score: "0.81" }, verdict: "→ evaluate_complex" } },
+      { node: "evaluate_complex", snapshot: { title: "Оценка complex", fields: { top_score: "0.81", threshold: "0.50" }, verdict: "✅ sufficient → visual_enrichment" } },
+      { node: "visual_enrichment",snapshot: { title: "Визуальное обогащение", fields: { visual_found: "нет" }, verdict: "→ generate_answer" } },
+      { node: "generate_answer",  snapshot: { title: "Генерация (complex)", fields: { model: "gemini-3-flash (thinking)", thinking_budget: "4096 токенов", passages_used: "24" }, verdict: "«От первичного инструктажа освобождаются работники, чья деятельность не связана с...»" } },
+      { node: "END",              snapshot: { title: "Готово", fields: { path: "complex", latency: "~18s", cost: "~$0.015" } } },
+    ],
   },
   rewriter: {
     label: "Rewriter loop (перефразировка)",
-    path: ["START", "intent_gate", "router", "rag_simple", "evaluate_triage", "llm_verifier", "rewriter", "rag_simple", "evaluate_triage", "visual_enrichment", "generate_answer", "END"],
+    query: "программа В обучение",
+    steps: [
+      { node: "START",            snapshot: { title: "Запрос получен", fields: { query: "«программа В обучение»" } } },
+      { node: "intent_gate",      snapshot: { title: "Проверка намерения", fields: { cosine_sim_to_corpus: "0.55" }, verdict: "✅ domain match" } },
+      { node: "router",           snapshot: { title: "Роутинг", fields: { active_query: "«программа В обучение охрана труда»", glossary_hit: "программа В → подпункт «в» п.46 Правил" }, verdict: "→ rag_simple" } },
+      { node: "rag_simple",       snapshot: { title: "Retrieval #1", fields: { passages: "12", top_score: "0.35 (ниже 0.38)" }, verdict: "→ evaluate_triage" } },
+      { node: "evaluate_triage",  snapshot: { title: "Оценка quality #1", fields: { top_score: "0.35 < 0.38" }, verdict: "⚠️ borderline → llm_verifier" } },
+      { node: "llm_verifier",     snapshot: { title: "LLM верификация", fields: { verdict_llm: "INSUFFICIENT — нет прямого ответа по программе В" }, verdict: "→ rewriter (переформулировать)" } },
+      { node: "rewriter",         snapshot: { title: "Перефразировка", fields: { original_query: "«программа В обучение»", rewritten_query: "«периодичность обучения по подпункту в пункта 46 Приказа 2464»" }, verdict: "→ rag_simple #2" } },
+      { node: "rag_simple",       snapshot: { title: "Retrieval #2 (rewritten)", fields: { passages: "12", top_score: "0.79" }, verdict: "→ evaluate_triage #2" } },
+      { node: "evaluate_triage",  snapshot: { title: "Оценка quality #2", fields: { top_score: "0.79 ≥ 0.50" }, verdict: "✅ sufficient → visual_enrichment" } },
+      { node: "visual_enrichment",snapshot: { title: "Визуальное обогащение", fields: { visual_found: "нет" }, verdict: "→ generate_answer" } },
+      { node: "generate_answer",  snapshot: { title: "Генерация", fields: { model: "gemini-2.5-flash" }, verdict: "«Обучение по программе В проводится не реже одного раза в год»" } },
+      { node: "END",              snapshot: { title: "Готово", fields: { path: "simple→verifier→rewriter→simple", latency: "~22s", cost: "~$0.018" } } },
+    ],
   },
   oos: {
     label: "Out of scope (domain gate)",
-    path: ["START", "intent_gate", "END"],
+    query: "Как приготовить борщ?",
+    steps: [
+      { node: "START",            snapshot: { title: "Запрос получен", fields: { query: "«Как приготовить борщ?»" } } },
+      { node: "intent_gate",      snapshot: { title: "Проверка намерения", fields: { cosine_sim_to_corpus: "0.08", threshold: "0.25" }, verdict: "🚫 OOS (0.08 < 0.25) → END" } },
+      { node: "END",              snapshot: { title: "Завершено (OOS)", fields: { answer: "«Этот вопрос выходит за рамки системы нормативных документов»", latency: "~0.3s", cost: "~$0.000" } } },
+    ],
   },
   abstain: {
-    label: "Abstain (нет данных)",
-    path: ["START", "intent_gate", "router", "rag_simple", "evaluate_triage", "rag_complex", "evaluate_complex", "abstain", "END"],
+    label: "Abstain (нет данных в корпусе)",
+    query: "Какой штраф за нарушение требований по радиационной безопасности?",
+    steps: [
+      { node: "START",            snapshot: { title: "Запрос получен", fields: { query: "«Штраф за нарушение требований по радиационной безопасности?»" } } },
+      { node: "intent_gate",      snapshot: { title: "Проверка намерения", fields: { cosine_sim_to_corpus: "0.41" }, verdict: "✅ domain match (тема похожа на ОТ)" } },
+      { node: "router",           snapshot: { title: "Роутинг", fields: { active_query: "«штраф радиационная безопасность»" }, verdict: "→ rag_simple" } },
+      { node: "rag_simple",       snapshot: { title: "Retrieval", fields: { passages: "12", top_score: "0.29" }, verdict: "→ evaluate_triage" } },
+      { node: "evaluate_triage",  snapshot: { title: "Оценка quality", fields: { top_score: "0.29 < 0.38" }, verdict: "→ rag_complex (clearly_bad)" } },
+      { node: "rag_complex",      snapshot: { title: "Расширенный retrieval", fields: { multi_query_variants: "3", top_score: "0.31" }, verdict: "→ evaluate_complex" } },
+      { node: "evaluate_complex", snapshot: { title: "Оценка complex", fields: { top_score: "0.31 < 0.50 (hard gate)" }, verdict: "🚫 quality too low → abstain" } },
+      { node: "abstain",          snapshot: { title: "Abstain", fields: { reason: "Документов по радиационной безопасности нет в корпусе" }, verdict: "«Недостаточно данных для ответа на этот вопрос»" } },
+      { node: "END",              snapshot: { title: "Завершено (abstain)", fields: { latency: "~16s", cost: "~$0.010" } } },
+    ],
   },
 };
 
@@ -112,57 +177,81 @@ function runSimulation(scenarioKey) {
 
   document.querySelector(`.sim-btn[data-scenario="${scenarioKey}"]`).classList.add("running");
 
-  const path = scenario.path;
+  const steps = scenario.steps;
   let step = 0;
 
-  function showSimPanel(nodeId, stepIdx, total) {
-    const node = DATA.nodeDetails[nodeId];
+  function showSimPanel(stepObj, stepIdx, total) {
+    const { node: nodeId, snapshot } = stepObj;
+    const nodeData = DATA.nodeDetails[nodeId];
     const panel = document.getElementById("panel");
-    const progress = "●".repeat(stepIdx + 1) + "○".repeat(total - stepIdx - 1);
-    let html = `<div class="sim-status"><span class="sim-scenario">${escapeHtml(scenario.label)}</span><div class="sim-progress">${escapeHtml(progress)}</div></div>`;
+
+    const pct = Math.round(((stepIdx + 1) / total) * 100);
+    let html = `<div class="sim-status">`;
+    html += `<span class="sim-scenario">${escapeHtml(scenario.label)}</span>`;
+    html += `<div class="sim-query">💬 ${escapeHtml(scenario.query)}</div>`;
+    html += `<div class="sim-bar-wrap"><div class="sim-bar-fill" style="width:${pct}%"></div></div>`;
+    html += `<div class="sim-step-count">${stepIdx + 1} / ${total}</div>`;
+    html += `</div>`;
+
     html += `<h2>${escapeHtml(nodeId)}</h2>`;
-    if (node) {
-      if (node.description) html += `<p class="node-desc">${escapeHtml(node.description)}</p>`;
-      const inputs = node.inputs || [];
-      const outputs = node.outputs || [];
-      if (inputs.length || outputs.length) {
-        html += `<div class="io-block">`;
-        if (inputs.length) html += `<div class="io-row"><span class="io-label">←&nbsp;вход</span><span class="io-fields">${inputs.map(f => `<code>${escapeHtml(f)}</code>`).join(" ")}</span></div>`;
-        if (outputs.length) html += `<div class="io-row"><span class="io-label">→&nbsp;выход</span><span class="io-fields">${outputs.map(f => `<code>${escapeHtml(f)}</code>`).join(" ")}</span></div>`;
+
+    // Snapshot block — what's happening NOW with real data
+    if (snapshot) {
+      html += `<div class="snapshot-block">`;
+      html += `<div class="snapshot-title">${escapeHtml(snapshot.title)}</div>`;
+      if (snapshot.fields) {
+        html += `<div class="snapshot-fields">`;
+        Object.entries(snapshot.fields).forEach(([k, v]) => {
+          html += `<div class="snapshot-row"><span class="snapshot-key">${escapeHtml(k)}</span><span class="snapshot-val">${escapeHtml(v)}</span></div>`;
+        });
         html += `</div>`;
       }
-      const routing = node.routing || {};
-      const routeEntries = Object.entries(routing);
-      if (routeEntries.length) {
-        html += `<div class="routing-block"><div class="routing-title">Routing</div>`;
-        routeEntries.forEach(([target, condition]) => {
-          const isActive = stepIdx + 1 < path.length && path[stepIdx + 1] === target;
+      if (snapshot.verdict) {
+        html += `<div class="snapshot-verdict">${escapeHtml(snapshot.verdict)}</div>`;
+      }
+      html += `</div>`;
+    }
+
+    // Next node hint
+    if (stepIdx + 1 < steps.length) {
+      const nextNode = steps[stepIdx + 1].node;
+      html += `<div class="sim-next">следующий шаг → <strong>${escapeHtml(nextNode)}</strong></div>`;
+    }
+
+    // Routing (highlight active route)
+    if (nodeData && nodeData.routing) {
+      const nextNode = stepIdx + 1 < steps.length ? steps[stepIdx + 1].node : null;
+      const entries = Object.entries(nodeData.routing);
+      if (entries.length) {
+        html += `<div class="routing-block" style="margin-top:12px"><div class="routing-title">Routing</div>`;
+        entries.forEach(([target, condition]) => {
+          const isActive = target === nextNode || target === "END" && nextNode === "END";
           html += `<div class="route-row${isActive ? " route-active" : ""}"><span class="route-target">→ ${escapeHtml(target)}</span><span class="route-cond">${escapeHtml(condition)}</span></div>`;
         });
         html += `</div>`;
       }
     }
+
     panel.innerHTML = html;
   }
 
   function tick() {
-    if (step >= path.length) {
+    if (step >= steps.length) {
       document.querySelector(`.sim-btn[data-scenario="${scenarioKey}"]`).classList.remove("running");
       return;
     }
-    const nodeId = path[step];
-    // dim all, mark visited, mark current
+    const stepObj = steps[step];
+    const nodeId = stepObj.node;
+
     d3.selectAll("g.node").classed("sim-active", false);
-    if (step > 0) {
-      path.slice(0, step).forEach(id => {
-        d3.select(`g.node[id="${id}"]`).classed("sim-visited", true);
-      });
-    }
+    steps.slice(0, step).forEach(s => {
+      d3.select(`g.node[id="${s.node}"]`).classed("sim-visited", true);
+    });
     d3.select(`g.node[id="${nodeId}"]`)
       .classed("sim-visited", false)
       .classed("sim-active", true);
 
-    showSimPanel(nodeId, step, path.length);
+    showSimPanel(stepObj, step, steps.length);
     step++;
     simTimer = setTimeout(tick, STEP_MS);
   }
