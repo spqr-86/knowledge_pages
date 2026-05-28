@@ -198,6 +198,35 @@ function showPanel(nodeId) {
     });
     html += `</div>`;
   }
+  // Triage viz
+  if (node.triage_viz) {
+    const tv = node.triage_viz;
+    html += `<div class="triage-viz">`;
+    html += `<div class="triage-title">Как решает triage (по top_score)</div>`;
+    html += `<div class="thr-bar-wrap">`;
+    tv.zones.forEach(z => {
+      const pct = (z.to - z.from) * 100;
+      html += `<div class="thr-zone" style="width:${pct}%;background:${escapeHtml(z.color)}" title="${escapeHtml(z.label)}"></div>`;
+    });
+    html += `</div>`;
+    html += `<div class="thr-labels-wrap">`;
+    tv.thresholds.forEach(t => {
+      html += `<div class="thr-label" style="left:${t.value * 100}%"><span class="thr-tick" style="color:${escapeHtml(t.color)}">${t.value}</span><br><span class="thr-name">${escapeHtml(t.label)}</span></div>`;
+    });
+    html += `</div>`;
+    html += `<div class="thr-legend">`;
+    tv.zones.forEach(z => {
+      html += `<div class="thr-legend-row"><span class="thr-dot" style="background:${escapeHtml(z.color)}"></span><span>${escapeHtml(z.label)}</span></div>`;
+    });
+    html += `</div>`;
+    html += `<div class="escalations-title">⚡ Принудительные эскалации → rag_complex</div>`;
+    html += `<div class="escalations">`;
+    tv.escalations.forEach(e => {
+      html += `<div class="escalation-row"><span class="esc-name">${escapeHtml(e.name)}</span><span class="esc-cond">${escapeHtml(e.condition)}</span></div>`;
+    });
+    html += `</div></div>`;
+  }
+
   if (node.files && node.files.length) {
     html += `<div class="files-title">Код</div>`;
     node.files.forEach(f => {
