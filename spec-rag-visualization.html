@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Spec: Regulatory-RAG Visualization</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.55; color: #1a1a1a; }
+  h1 { border-bottom: 2px solid #333; padding-bottom: .4rem; }
+  h2 { margin-top: 2.5rem; color: #2a4d8f; }
+  h3 { margin-top: 1.5rem; }
+  .variant { border: 1px solid #ddd; border-radius: 8px; padding: 1.2rem 1.5rem; margin: 1rem 0; background: #fafbfc; }
+  .variant h3 { margin-top: 0; }
+  .pros, .cons { margin: .5rem 0; }
+  .pros::before { content: "➕ "; }
+  .cons::before { content: "➖ "; }
+  pre.ascii { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.3; }
+  ul.checklist { list-style: none; padding-left: 0; }
+  ul.checklist li::before { content: "☐ "; color: #2a4d8f; font-weight: bold; }
+  code { background: #eef; padding: 1px 5px; border-radius: 3px; font-size: 90%; }
+  .meta { color: #666; font-size: 90%; }
+  .tag { display: inline-block; background: #2a4d8f; color: white; padding: 2px 8px; border-radius: 3px; font-size: 80%; margin-right: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Spec: Визуализация архитектуры Regulatory-RAG</h1>
+<p class="meta">Дата: 2026-05-28 · Аудитория: лично Петр · Проект: <code>~/projects/ai/regulatory-rag</code> · Repo: <code>spqr-86/regulatory-rag</code></p>
+
+<h2>Задача</h2>
+<p>
+Regulatory-RAG — система с гибридным retrieval, FlashRank, LangGraph V7 пайплайном (12+ нод, conditional routing,
+триаж простой/сложный путь). Структура: <code>src/infra</code>, <code>src/indexing</code>, <code>src/backends</code>,
+<code>src/v7/nodes/*</code>, <code>config</code>, <code>eval</code>. Сложно держать в голове и ориентироваться.
+</p>
+<p>
+Нужна <b>статическая HTML-визуализация</b>, деплоящаяся на GitHub Pages (ветка <code>gh-pages</code> репо
+<code>spqr-86/regulatory-rag</code>), которая:
+</p>
+<ul>
+  <li>Показывает <b>поток данных</b> по V7 graph (запрос → intent_gate → router → rag_simple → triage → … → generate_answer)</li>
+  <li>При клике на блок графа — <b>проваливается</b> в карту модулей/файлов этой стадии</li>
+  <li>Каждый файл и каждая ключевая функция/класс — <b>кликабельная ссылка на GitHub</b> (на строку, если возможно; иначе на файл)</li>
+  <li>Работает офлайн в браузере после деплоя, без бэкенда</li>
+</ul>
+
+<h2>Подходы (4 варианта)</h2>
+
+<div class="variant">
+  <h3>Вариант A. Mermaid-граф + аккордеоны <span class="tag">low effort</span></h3>
+  <p>
+    Один HTML-файл. <b>Mermaid.js</b> рисует flowchart V7 пайплайна (источник правды — парсинг <code>src/v7/graph.py</code>
+    или ручной dict). Каждая нода кликабельна → раскрывается аккордеон под графом с описанием стадии и списком файлов/функций
+    (каждая — ссылка на GitHub с <code>#L42-L80</code>).
+  </p>
+  <pre class="ascii">
+┌─────────────────────────────────────────────┐
+│  [intent_gate] → [router] → [rag_simple]    │
+│       ↓             ↓            ↓          │
+│      END     [clarify_respond] [triage]     │
+│                                  ↓          │
+│                          ┌──────┴──────┐    │
+│                       [verifier]  [complex]│
+│                          ↓             ↓   │
+│                  ...        [eval_complex] │
+└─────────────────────────────────────────────┘
+[Click node ↑] → разворачивается секция ↓
+
+▸ rag_simple
+  src/v7/nodes/rag_simple.py
+    • rag_simple(state)            → GitHub#L23-L67
+    • _hybrid_search(query, k)     → GitHub#L70-L98
+  src/indexing/vector_store.py
+    • VectorStore.search()         → GitHub#L15-L40
+  </pre>
+  <div class="pros">Минимум кода (~300 строк HTML). Mermaid из CDN. Парсинг graph.py регуляркой даёт честный source-of-truth.</div>
+  <div class="pros">Легко поддерживать: вся метадата в одном JSON-блоке внутри HTML.</div>
+  <div class="cons">"Провал" только на 1 уровень (граф → файлы). Без визуального drill-down в саму функцию.</div>
+  <div class="cons">Mermaid flowchart выглядит технически, не "красиво" из коробки.</div>
+</div>
+
+<div class="variant">
+  <h3>Вариант B. D3.js zoomable canvas с уровнями <span class="tag">high effort, max wow</span></h3>
+  <p>
+    Полноэкранный SVG-canvas на <b>D3.js</b>. Три уровня масштаба: (1) граф пайплайна с анимированным потоком запроса,
+    (2) zoom на ноду → разворачиваются прямоугольники модулей/файлов, (3) zoom ещё глубже → функции с сигнатурами.
+    Любой элемент — клик → GitHub. Поток данных подсвечивается при наведении.
+  </p>
+  <pre class="ascii">
+   LEVEL 1                    LEVEL 2 (zoom in)           LEVEL 3
+   ┌──────┐                   ┌─ rag_simple ──────┐       ┌─ rag_simple.py ─┐
+   │ pipe │  ← scroll/click → │  rag_simple.py    │  →    │ def rag_simple()│
+   │ flow │                   │  vector_store.py  │       │ def _hybrid…()  │
+   └──────┘                   │  chroma_helpers.py│       └─────────────────┘
+                              └───────────────────┘
+   ← pan, zoom, mini-map, breadcrumbs (Pipeline > rag_simple > rag_simple.py)
+  </pre>
+  <div class="pros">"Красиво проваливается" — именно как ты сформулировал. Очень нагляден поток данных.</div>
+  <div class="pros">Один canvas вмещает всю систему — можно увидеть и общее, и детали без переключения страниц.</div>
+  <div class="cons">~1000+ строк JS. Дольше делать, больше поверхность багов (зум/координаты).</div>
+  <div class="cons">Метаданные о функциях нужно собирать <code>ast.parse</code>-скриптом — пайплайн генерации усложняется.</div>
+</div>
+
+<div class="variant">
+  <h3>Вариант C. Docusaurus / MkDocs-Material статика с интерактивными диаграммами <span class="tag">medium effort</span></h3>
+  <p>
+    Полноценный сайт: главная — обзор архитектуры с Mermaid-диаграммой, отдельные страницы на каждый модуль
+    (<code>indexing</code>, <code>v7/nodes</code>, <code>infra</code>) с автогенерацией списка файлов и функций
+    из исходников. На каждую функцию — кнопка "Open in GitHub". Поиск, тёмная тема, навигация в сайдбаре.
+  </p>
+  <pre class="ascii">
+┌────────────┬────────────────────────────────────┐
+│ Sidebar    │  # V7 Pipeline                     │
+│            │                                    │
+│ Overview   │  ```mermaid                        │
+│ ▾ Pipeline │  intent_gate → router → rag_simple │
+│   intent…  │  ```                               │
+│   router   │                                    │
+│   rag_simp │  ## Nodes                          │
+│ ▸ Indexing │  - [intent_gate](./intent_gate)    │
+│ ▸ Infra    │  - [router](./router) — routing…   │
+│ ▸ Eval     │                                    │
+└────────────┴────────────────────────────────────┘
+  </pre>
+  <div class="pros">Расширяется: можно добавлять заметки по решениям, ADR-ы, eval-результаты. Превращается в knowledge base.</div>
+  <div class="pros">Поиск, темы, мобилка из коробки.</div>
+  <div class="cons">Перебор для одного человека. Большой setup (Node.js билд, конфиги). Не "красивый граф", а скорее "красивая дока".</div>
+  <div class="cons">Drill-down не визуальный (клик-провал) а ссылочный (переход на страницу).</div>
+</div>
+
+<div class="variant">
+  <h3>Вариант D. Excalidraw-style flowchart с боковой панелью кода <span class="tag">medium effort, balanced</span></h3>
+  <p>
+    Split-screen: слева <b>статический SVG-граф</b> (нарисован вручную в стиле excalidraw или сгенерирован через
+    <b>elkjs</b>/<b>dagre</b>), справа — панель деталей. Клик на ноду → справа появляется карточка стадии: описание,
+    список файлов с раскрывающимися функциями, фрагменты кода (подгружаются с <code>raw.githubusercontent.com</code>
+    или вшиты при билде), ссылки на GitHub.
+  </p>
+  <pre class="ascii">
+┌──────────────────────┬─────────────────────────────────┐
+│   [intent_gate]      │  📦 rag_simple                  │
+│        │             │  ─────────────────────          │
+│   [router]──→[clari] │  Гибридный retrieval (BM25 +    │
+│        │             │  semantic), FlashRank rerank.   │
+│  ▸[rag_simple]◀───   │                                 │
+│        │       │     │  📄 src/v7/nodes/rag_simple.py  │
+│   [triage]     │     │    ▸ rag_simple(state) [L23]    │
+│    │  │  │   [rewri] │    ▸ _hybrid_search()    [L70]  │
+│  [vrf][cmplx]        │  📄 src/indexing/vector_store.py│
+│                      │    ▸ VectorStore.search()       │
+│                      │  ─────────────────────          │
+│                      │  [Open in GitHub →]             │
+└──────────────────────┴─────────────────────────────────┘
+  </pre>
+  <div class="pros">Баланс: визуально-красивый граф слева + структурированные детали справа. "Провал" происходит без потери общего обзора.</div>
+  <div class="pros">~500 строк HTML/JS. Без сложного зума. Layout через dagre — автоматически.</div>
+  <div class="pros">Можно показывать фрагменты исходного кода с подсветкой (highlight.js) прямо в панели.</div>
+  <div class="cons">Drill-down 1.5 уровня (граф → панель), не три как в D3-варианте.</div>
+</div>
+
+<h2>Критерии приёмки</h2>
+<ul class="checklist">
+  <li>HTML-сайт деплоится на GitHub Pages из ветки <code>gh-pages</code> репо <code>spqr-86/regulatory-rag</code> и открывается по публичному URL</li>
+  <li>На главной видна вся структура V7 пайплайна (12 нод + рёбра, включая conditional routing)</li>
+  <li>Каждая нода V7 кликабельна и раскрывает список файлов модуля</li>
+  <li>Каждый файл в списке — ссылка на GitHub (<code>github.com/spqr-86/regulatory-rag/blob/main/...</code>)</li>
+  <li>Где есть отдельная значимая функция/класс — ссылка с якорем на строки (<code>#L23-L67</code>)</li>
+  <li>Покрыты не только V7, но и поддерживающие модули: <code>src/infra</code>, <code>src/indexing</code>, <code>src/backends</code>, <code>config</code>, <code>eval</code></li>
+  <li>Источник правды для графа — <code>src/v7/graph.py</code> (либо парсится скриптом, либо явно синхронизируется при изменении)</li>
+  <li>Сборка одной командой: <code>python scripts/build_docs.py</code> или аналог; результат — папка <code>docs-site/</code></li>
+  <li>CI на GitHub Actions автоматически билдит и публикует на <code>gh-pages</code> при пуше в <code>main</code></li>
+  <li>Открывается локально без зависимостей (двойной клик по index.html работает)</li>
+</ul>
+
+<h2>Рекомендация</h2>
+<p>
+Для цели "понимать систему" и "красиво проваливается" с разумным effort — <b>вариант D</b>. Он даёт визуальный граф
++ структурированные детали + фрагменты кода справа, без сложности D3-зума и без overhead Docusaurus. Если хочется
+максимум wow — <b>вариант B</b>, но это +1-2 дня работы.
+</p>
+
+</body>
+</html>
