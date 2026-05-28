@@ -89,6 +89,19 @@ main { display: flex; height: calc(100vh - 56px); }
 .snapshot-val { color: #e2e8f0; font-family: monospace; }
 .snapshot-verdict { margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a3142; color: #fbbf24; font-size: 12px; font-weight: 600; }
 
+/* Output values */
+.output-values { margin: 4px 0 4px 70px; display: flex; flex-direction: column; gap: 3px; }
+.output-val-row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; }
+.oval-val { background: #14532d; color: #86efac; padding: 1px 6px; border-radius: 3px; font-size: 11px; white-space: nowrap; }
+.oval-desc { color: #64748b; font-size: 11px; }
+
+/* Logic steps */
+.logic-steps { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+.logic-step { display: flex; gap: 10px; align-items: flex-start; }
+.logic-step-num { background: #2a4d8f; color: #e2e8f0; font-size: 11px; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.logic-step-title { color: #e2e8f0; font-size: 12px; font-weight: 600; }
+.logic-step-detail { color: #94a3b8; font-size: 11px; margin-top: 2px; line-height: 1.5; }
+
 /* Triage viz */
 .triage-viz { margin-bottom: 16px; border: 1px solid #2a3142; border-radius: 6px; overflow: hidden; }
 .triage-title { background: #4a1d96; color: #e2e8f0; font-size: 11px; padding: 5px 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }

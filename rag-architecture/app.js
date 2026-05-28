@@ -275,7 +275,29 @@ function showPanel(nodeId) {
   if (inputs.length || outputs.length) {
     html += `<div class="io-block">`;
     if (inputs.length) html += `<div class="io-row"><span class="io-label">←&nbsp;вход</span><span class="io-fields">${inputs.map(f => `<code>${escapeHtml(f)}</code>`).join(" ")}</span></div>`;
-    if (outputs.length) html += `<div class="io-row"><span class="io-label">→&nbsp;выход</span><span class="io-fields">${outputs.map(f => `<code>${escapeHtml(f)}</code>`).join(" ")}</span></div>`;
+    if (outputs.length) {
+      html += `<div class="io-row"><span class="io-label">→&nbsp;выход</span><span class="io-fields">${outputs.map(f => `<code>${escapeHtml(f)}</code>`).join(" ")}</span></div>`;
+      // Show possible values for each output field if defined
+      const ov = node.output_values || {};
+      outputs.forEach(fieldName => {
+        const vals = ov[fieldName];
+        if (vals && vals.length) {
+          html += `<div class="output-values">`;
+          vals.forEach(v => {
+            html += `<div class="output-val-row"><code class="oval-val">${escapeHtml(v.value)}</code><span class="oval-desc">${escapeHtml(v.desc)}</span></div>`;
+          });
+          html += `</div>`;
+        }
+      });
+    }
+    html += `</div>`;
+  }
+  // Logic steps
+  if (node.logic_steps && node.logic_steps.length) {
+    html += `<div class="logic-steps">`;
+    node.logic_steps.forEach((s, i) => {
+      html += `<div class="logic-step"><span class="logic-step-num">${i + 1}</span><div><div class="logic-step-title">${escapeHtml(s.step)}</div><div class="logic-step-detail">${escapeHtml(s.detail)}</div></div></div>`;
+    });
     html += `</div>`;
   }
   const routing = node.routing || {};
