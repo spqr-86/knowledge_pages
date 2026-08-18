@@ -10,14 +10,39 @@
 <body>
 <header>
   <h1>Regulatory-RAG · V7 Architecture</h1>
-  <div class="repo"><a href="https://github.com/spqr-86/regulatory-rag" target="_blank">github.com/spqr-86/regulatory-rag</a></div>
+  <div class="header-right">
+    <div class="tabs">
+      <button class="tab active" data-tab="pipeline">🔍 Pipeline</button>
+      <button class="tab" data-tab="indexing">📥 Indexing</button>
+    </div>
+    <div class="repo"><a href="https://github.com/spqr-86/regulatory-rag" target="_blank">github.com/spqr-86/regulatory-rag</a></div>
+  </div>
 </header>
-<main>
-  <section id="graph"><svg id="svg-graph"><g/></svg></section>
-  <aside id="panel">
-    <div class="placeholder">Кликни ноду графа слева →</div>
-  </aside>
-</main>
+
+<!-- Pipeline tab -->
+<div id="tab-pipeline" class="tab-content active">
+  <div id="simulator">
+    <span class="sim-label">Simulate:</span>
+    <button class="sim-btn" data-scenario="simple">📋 Нормативный вопрос</button>
+    <button class="sim-btn" data-scenario="borderline">🔍 Borderline → verifier</button>
+    <button class="sim-btn" data-scenario="complex">⚙️ Сложный путь</button>
+    <button class="sim-btn" data-scenario="rewriter">✏️ Rewriter loop</button>
+    <button class="sim-btn" data-scenario="oos">🚫 Out of scope</button>
+    <button class="sim-btn" data-scenario="abstain">⬜ Abstain</button>
+  </div>
+  <main>
+    <section id="graph"><svg id="svg-graph"><g/></svg></section>
+    <aside id="panel">
+      <div class="placeholder">Кликни ноду или запусти сценарий ↑</div>
+    </aside>
+  </main>
+</div>
+
+<!-- Indexing tab -->
+<div id="tab-indexing" class="tab-content">
+  <div id="indexing-view"></div>
+</div>
+
 <script>const DATA = /*{{DATA_JSON}}*/null;</script>
 <script src="app.js"></script>
 </body>

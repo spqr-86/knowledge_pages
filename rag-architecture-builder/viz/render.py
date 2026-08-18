@@ -8,7 +8,14 @@ from pathlib import Path
 from typing import Any
 
 from viz.graph_parser import parse_graph
-from viz.module_walker import MODULES, NODE_TO_EXTRA_MODULES, walk_module
+from viz.module_walker import (
+    INDEXING_STEPS,
+    MODULES,
+    NODE_KIND_COLORS,
+    NODE_METADATA,
+    NODE_TO_EXTRA_MODULES,
+    walk_module,
+)
 
 
 def build_node_details(repo_root: Path) -> dict[str, Any]:
@@ -42,7 +49,31 @@ def render_site(repo_root: Path, out_dir: Path) -> None:
     graph = parse_graph(repo_root / "src/v7/graph.py")
     node_details = build_node_details(repo_root)
     modules = build_module_panels(repo_root)
-    data = {"graph": graph, "nodeDetails": node_details, "modules": modules}
+
+    # Enrich graph nodes with kind/color from NODE_METADATA
+    for n in graph["nodes"]:
+        meta = NODE_METADATA.get(n["id"], {})
+        n["kind"] = meta.get("kind", "utility")
+        n["color"] = NODE_KIND_COLORS.get(n["kind"], "#1e3a5f")
+
+    # Merge NODE_METADATA into nodeDetails
+    for node_id, meta in NODE_METADATA.items():
+        if node_id not in node_details:
+            node_details[node_id] = {"files": []}
+        node_details[node_id]["description"] = meta.get("description", "")
+        node_details[node_id]["inputs"] = meta.get("inputs", [])
+        node_details[node_id]["outputs"] = meta.get("outputs", [])
+        node_details[node_id]["routing"] = meta.get("routing", {})
+        for extra_key in ("output_values", "logic_steps", "triage_viz"):
+            if extra_key in meta:
+                node_details[node_id][extra_key] = meta[extra_key]
+
+    data = {
+        "graph": graph,
+        "nodeDetails": node_details,
+        "modules": modules,
+        "indexingSteps": INDEXING_STEPS,
+    }
 
     out_dir.mkdir(parents=True, exist_ok=True)
     tmpl_dir = Path(__file__).parent / "templates"
